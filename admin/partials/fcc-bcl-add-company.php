@@ -39,37 +39,37 @@ if (isset($_POST['fcc_bcl_add_company'])) {
     <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
     <?php settings_errors('fcc_bcl_messages'); ?>
     
-    <h2><?php _e('Add New Company', 'fcc-bcl'); ?></h2>
+    <?php _e('Please provide the necessary information for the new company. The details you enter here will be used to auto-fill shared information during the label creation process.', 'fcc-bcl'); ?>
     <form method="post" action="">
         <?php wp_nonce_field('fcc_bcl_add_company', 'fcc_bcl_add_company_nonce'); ?>
         <table class="form-table">
             <tr>
                 <th scope="row"><label for="company_name"><?php _e('Company Name', 'fcc-bcl'); ?></label></th>
-                <td><input type="text" name="company_name" id="company_name" class="regular-text" required></td>
+                <td><input type="text" name="company_name" id="company_name" class="regular-text" required placeholder="<?php _e('Enter company name', 'fcc-bcl'); ?>"></td>
             </tr>
             <tr>
                 <th scope="row"><label for="customer_support_url"><?php _e('Customer Support URL', 'fcc-bcl'); ?></label></th>
-                <td><input type="url" name="customer_support_url" id="customer_support_url" class="regular-text" required></td>
+                <td><input type="url" name="customer_support_url" id="customer_support_url" class="regular-text" required placeholder="<?php _e('https://example.com/support', 'fcc-bcl'); ?>" pattern="https?://.+"></td>
             </tr>
             <tr>
                 <th scope="row"><label for="customer_support_phone"><?php _e('Customer Support Phone', 'fcc-bcl'); ?></label></th>
-                <td><input type="tel" name="customer_support_phone" id="customer_support_phone" class="regular-text" required></td>
+                <td><input type="tel" name="customer_support_phone" id="customer_support_phone" class="regular-text" required placeholder="<?php _e('123-456-7890', 'fcc-bcl'); ?>" pattern="[\d]{3}-[\d]{3}-[\d]{4}" title="<?php _e('Phone number should be in the format 123-456-7890', 'fcc-bcl'); ?>"></td>
             </tr>
             <tr>
                 <th scope="row"><label for="network_management_url"><?php _e('Network Management URL', 'fcc-bcl'); ?></label></th>
-                <td><input type="url" name="network_management_url" id="network_management_url" class="regular-text" required></td>
+                <td><input type="url" name="network_management_url" id="network_management_url" class="regular-text" required placeholder="<?php _e('https://example.com/network', 'fcc-bcl'); ?>" pattern="https?://.+"></td>
             </tr>
             <tr>
                 <th scope="row"><label for="privacy_policy_url"><?php _e('Privacy Policy URL', 'fcc-bcl'); ?></label></th>
-                <td><input type="url" name="privacy_policy_url" id="privacy_policy_url" class="regular-text" required></td>
+                <td><input type="url" name="privacy_policy_url" id="privacy_policy_url" class="regular-text" required placeholder="<?php _e('https://example.com/privacy', 'fcc-bcl'); ?>" pattern="https?://.+"></td>
             </tr>
             <tr>
                 <th scope="row"><label for="contract_url"><?php _e('Contract URL', 'fcc-bcl'); ?></label></th>
-                <td><input type="url" name="contract_url" id="contract_url" class="regular-text"></td>
+                <td><input type="url" name="contract_url" id="contract_url" class="regular-text" placeholder="<?php _e('https://example.com/contract', 'fcc-bcl'); ?>" pattern="https?://.+"></td>
             </tr>
             <tr>
                 <th scope="row"><label for="fcc_frn"><?php _e('FCC FRN', 'fcc-bcl'); ?></label></th>
-                <td><input type="text" name="fcc_frn" id="fcc_frn" class="regular-text" required></td>
+                <td><input type="text" name="fcc_frn" id="fcc_frn" class="regular-text" required placeholder="<?php _e('Enter FCC FRN', 'fcc-bcl'); ?>"></td>
             </tr>
         </table>
         <?php submit_button(__('Add Company', 'fcc-bcl'), 'primary', 'fcc_bcl_add_company'); ?>
