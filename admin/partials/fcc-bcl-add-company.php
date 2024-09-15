@@ -72,6 +72,10 @@ if (isset($_POST['fcc_bcl_add_company'])) {
                 <td><input type="text" name="fcc_frn" id="fcc_frn" class="regular-text" required placeholder="<?php _e('Enter FCC FRN', 'fcc-bcl'); ?>"></td>
             </tr>
         </table>
-        <?php submit_button(__('Add Company', 'fcc-bcl'), 'primary', 'fcc_bcl_add_company'); ?>
+        <p class="submit">
+            <?php submit_button(__('Add Company', 'fcc-bcl'), 'primary', 'fcc_bcl_add_company'); ?>
+            <a href="<?php echo esc_url(admin_url('admin.php?page=fcc-bcl-companies')); ?>" class="button button-secondary"><?php _e('Cancel', 'fcc-bcl'); ?></a>
+        </p>
+
     </form>
 </div>

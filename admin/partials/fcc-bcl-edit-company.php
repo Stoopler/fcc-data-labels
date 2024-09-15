@@ -75,6 +75,9 @@ if (isset($_POST['fcc_bcl_edit_company'])) {
                 <td><input type="text" name="fcc_frn" id="fcc_frn" class="regular-text" value="<?php echo esc_attr($company['fcc_frn']); ?>" placeholder="<?php _e('Enter FCC FRN', 'fcc-bcl'); ?>" required></td>
             </tr>
         </table>
-        <?php submit_button(__('Update Company', 'fcc-bcl'), 'primary', 'fcc_bcl_edit_company'); ?>
+        <p class="submit">
+            <?php submit_button(__('Update Company', 'fcc-bcl'), 'primary', 'fcc_bcl_edit_company', false); ?>
+            <a href="<?php echo esc_url(admin_url('admin.php?page=fcc-bcl-companies')); ?>" class="button button-secondary"><?php _e('Cancel', 'fcc-bcl'); ?></a>
+        </p>
     </form>
 </div>
