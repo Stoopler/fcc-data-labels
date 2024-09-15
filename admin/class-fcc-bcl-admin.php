@@ -14,7 +14,7 @@ class FCC_BCL_Admin {
      * @since    1.0.0
      */
     public function __construct() {
-        // Constructor logic here
+
     }
 
     /**
@@ -47,42 +47,52 @@ class FCC_BCL_Admin {
             'FCC Labels',
             'FCC Labels',
             'manage_options',
-            'fcc-bcl',
-            array($this, 'display_plugin_setup_page'),
+            'fcc-bcl-add-label',
+            array($this, 'display_add_label_page'),
             'dashicons-tag',
             6
         );
-
+    
         add_submenu_page(
-            'fcc-bcl',
+            'fcc-bcl-add-label',
             'Add New Label',
             'Add New Label',
             'manage_options',
             'fcc-bcl-add-label',
             array($this, 'display_add_label_page')
         );
-
+    
         add_submenu_page(
-            'fcc-bcl',
+            'fcc-bcl-add-label',
             'Manage Labels',
             'Manage Labels',
             'manage_options',
             'fcc-bcl-manage-labels',
             array($this, 'display_manage_labels_page')
         );
-
+    
         add_submenu_page(
-            'fcc-bcl',
-            'Company Configuration',
-            'Company Configuration',
+            'fcc-bcl-add-label',
+            'Manage Companies',
+            'Manage Companies',
             'manage_options',
-            'fcc-bcl-company-config',
+            'fcc-bcl-companies',
             array($this, 'display_company_config_page')
         );
-
-        // Add this new submenu page
+    
+        // Add "Add Company" as a hidden item
         add_submenu_page(
-            null, // No parent menu
+            'fcc-bcl-companies',
+            'Add New Company',
+            'Add New Company',
+            'manage_options',
+            'fcc-bcl-add-company',
+            array($this, 'display_add_company_page')
+        );
+    
+        // Keep the edit company page as a hidden item
+        add_submenu_page(
+            'fcc-bcl-companies',
             'Edit Company',
             'Edit Company',
             'manage_options',
@@ -92,12 +102,16 @@ class FCC_BCL_Admin {
     }
 
     /**
-     * Render the setup page for the plugin.
+     * Display the add company page
      *
      * @since    1.0.0
      */
-    public function display_plugin_setup_page() {
-        include_once('partials/fcc-bcl-admin-display.php');
+    public function display_add_company_page() {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('You do not have sufficient permissions to access this page.'));
+        }
+
+        include_once('partials/fcc-bcl-add-company.php');
     }
 
     /**
@@ -144,6 +158,10 @@ class FCC_BCL_Admin {
      * @since    1.0.0
      */
     public function display_company_config_page() {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('You do not have sufficient permissions to access this page.'));
+        }
+
         include_once('partials/fcc-bcl-company-config.php');
     }
 
@@ -447,5 +465,5 @@ class FCC_BCL_Admin {
             $wpdb->insert($table_name, $data, $format);
             return $wpdb->insert_id;
         }
-    }
+    }  
 }

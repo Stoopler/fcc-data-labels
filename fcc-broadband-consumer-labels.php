@@ -13,10 +13,6 @@ if (!defined('WPINC')) {
     die;
 }
 
-// Enable error reporting for troubleshooting
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 // Define plugin version - this is the single source of truth
 define('FCC_BCL_VERSION', '1.1.4');
 
