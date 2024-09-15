@@ -1,0 +1,111 @@
+.fcc-bcl-form {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+}
+
+.fcc-bcl-form-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.fcc-bcl-form-inputs {
+    flex: 3;
+    min-width: 300px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.fcc-bcl-form-preview {
+    flex: 1;
+    min-width: 300px;
+    background: #f1f1f1;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+.fcc-bcl-form-section {
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+.fcc-bcl-form-row {
+    margin-bottom: 15px;
+}
+
+.fcc-bcl-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.fcc-bcl-form input[type="text"],
+.fcc-bcl-form input[type="number"],
+.fcc-bcl-form input[type="url"],
+.fcc-bcl-form select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.fcc-bcl-form h2 {
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.monthly-fee-row,
+.onetime-fee-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.monthly-fee-row input,
+.onetime-fee-row input {
+    flex: 1;
+}
+
+.remove-fee {
+    background: #dc3232;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+#add-monthly-fee,
+#add-onetime-fee {
+    margin-top: 10px;
+    background: #0085ba;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+/* Ensure the preview label is properly styled */
+#label-preview .bbl {
+    font-size: small;
+    line-height: 1.4;
+    border: 1px solid #000;
+    padding: .5rem;
+    margin-bottom: .5rem;
+    background-color: #fff;
+    min-width: 250px;
+    max-width: 380px;
+}
+
+.fcc-bcl-form-column {
+    flex: 1;
+    min-width: 250px;
+}
