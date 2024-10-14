@@ -20,7 +20,7 @@ $companies = $this->get_companies();
 
 <div class="wrap">
     <h1><?php echo esc_html(get_admin_page_title()); ?> <a href="<?php echo esc_url(admin_url('admin.php?page=fcc-bcl-add-company')); ?>" class="page-title-action"><?php _e('Add Company', 'fcc-bcl'); ?></a></h1>
-      
+
     <?php if (empty($companies)): ?>
         <p><?php _e('You have no configured companies.', 'fcc-bcl'); ?></p>
     <?php else: ?>

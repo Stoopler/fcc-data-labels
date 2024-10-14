@@ -29,22 +29,62 @@
             $('#label-preview').html(labelHtml);
         }
 
-        $('.fcc-bcl-form-inputs input, .fcc-bcl-form-inputs select').on('change keyup', updateLabelPreview);
-        updateLabelPreview(); // Initial update
+        // Debounce function
+        function debounce(func, wait) {
+            var timeout;
+            return function() {
+                var context = this, args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(function() {
+                    func.apply(context, args);
+                }, wait);
+            };
+        }
+
+        // Use debounced version for form changes
+        var debouncedUpdatePreview = debounce(updateLabelPreview, 300);
+
+        // Update preview on form changes
+        $('form.fcc-bcl-form-inputs').on('change keyup', 'input, select, textarea', debouncedUpdatePreview);
+
+        // Initial preview update
+        updateLabelPreview();
 
         // Handle dynamic fee fields
-        $('#add-monthly-fee, #add-onetime-fee').click(function() {
-            var container = $(this).prev('div');
-            var newRow = container.find('.fcc-bcl-form-row').first().clone();
+        $('.add-fee').off('click').on('click', function(e) {
+            e.preventDefault();
+            var feeType = $(this).data('fee-type');
+            var feeContainer = $('#' + feeType + '-fees-container');
+            var newRow = feeContainer.find('.fee-row:first').clone();
             newRow.find('input').val('');
-            container.append(newRow);
+            feeContainer.append(newRow);
             updateLabelPreview();
         });
 
-        $(document).on('click', '.remove-fee', function() {
-            $(this).closest('.fcc-bcl-form-row').remove();
+        $(document).off('click', '.remove-fee').on('click', '.remove-fee', function(e) {
+            e.preventDefault();
+            $(this).closest('.fee-row').remove();
             updateLabelPreview();
         });
+
+        // Populate existing fees on page load (for edit page)
+        function populateExistingFees(feeType) {
+            var feeContainer = $('#' + feeType + '-fees-container');
+            var feeData = feeContainer.data('existing-fees');
+            if (feeData && feeData.length > 0) {
+                feeContainer.empty();
+                feeData.forEach(function(fee) {
+                    var newRow = $('<div class="fee-row"></div>');
+                    newRow.append('<input type="text" name="' + feeType + '_fee_name[]" value="' + fee.name + '">');
+                    newRow.append('<input type="number" step="0.01" name="' + feeType + '_fee_price[]" value="' + fee.price + '">');
+                    newRow.append('<button type="button" class="remove-fee">Remove</button>');
+                    feeContainer.append(newRow);
+                });
+            }
+        }
+
+        populateExistingFees('monthly');
+        populateExistingFees('onetime');
     });
 
 })(jQuery);

@@ -6,7 +6,11 @@
  * @package    FCC_BCL
  * @subpackage FCC_BCL/public
  */
+require_once FCC_BCL_PLUGIN_DIR . 'includes/class-fcc-bcl-label-template.php';
+
 class FCC_BCL_Public {
+
+    private $version;
 
     /**
      * Initialize the class and set its properties.
@@ -14,8 +18,9 @@ class FCC_BCL_Public {
      * @since    1.0.0
      */
     public function __construct() {
-        // Constructor logic here
+        $this->version = FCC_BCL_VERSION;
         add_action('wp_enqueue_scripts', array($this, 'enqueue_label_styles'));
+        add_shortcode('fcc_bcl', array($this, 'render_label'));
     }
 
     /**
@@ -42,9 +47,7 @@ class FCC_BCL_Public {
             return '<p>Label not found.</p>';
         }
 
-        ob_start();
-        include plugin_dir_path(__FILE__) . 'partials/fcc-bcl-label-display.php';
-        return ob_get_clean();
+        return FCC_BCL_Label_Template::generate_label_html($label_data);
     }
 
     /**
@@ -80,7 +83,7 @@ class FCC_BCL_Public {
     public function enqueue_label_styles() {
         global $post;
         if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'fcc_bcl')) {
-            wp_enqueue_style('fcc-bcl-label-style', plugin_dir_url(__FILE__) . 'css/fcc-bcl-label.css', array(), FCC_BCL_VERSION, 'all');
+            wp_enqueue_style('fcc-bcl-label-style', plugin_dir_url(__FILE__) . 'css/fcc-bcl-label.css', array(), $this->version, 'all');
         }
     }
 }

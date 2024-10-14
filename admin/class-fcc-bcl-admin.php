@@ -8,13 +8,17 @@
  */
 class FCC_BCL_Admin {
 
+    private $version;
+
     /**
      * Initialize the class and set its properties.
      *
      * @since    1.0.0
      */
     public function __construct() {
-
+        $this->version = FCC_BCL_VERSION;
+        add_action('wp_ajax_fcc_bcl_get_label_preview', array($this, 'ajax_get_label_preview'));
+        add_action('wp_ajax_nopriv_fcc_bcl_get_label_preview', array($this, 'ajax_get_label_preview'));
     }
 
     /**
@@ -23,8 +27,8 @@ class FCC_BCL_Admin {
      * @since    1.0.0
      */
     public function enqueue_styles() {
-        wp_enqueue_style('fcc-bcl-admin', FCC_BCL_PLUGIN_URL . 'admin/css/fcc-bcl-admin.css', array(), FCC_BCL_VERSION, 'all');
-        wp_enqueue_style('fcc-bcl-label-preview', FCC_BCL_PLUGIN_URL . 'admin/css/fcc-bcl-label-preview.css', array(), FCC_BCL_VERSION, 'all');
+        wp_enqueue_style('fcc-bcl-admin', FCC_BCL_PLUGIN_URL . 'admin/css/fcc-bcl-admin.css', array(), $this->version, 'all');
+        wp_enqueue_style('fcc-bcl-label', FCC_BCL_PLUGIN_URL . 'public/css/fcc-bcl-label.css', array(), $this->version, 'all');
     }
 
     /**
@@ -33,8 +37,11 @@ class FCC_BCL_Admin {
      * @since    1.0.0
      */
     public function enqueue_scripts() {
-        wp_enqueue_script('fcc-bcl-admin', FCC_BCL_PLUGIN_URL . 'admin/js/fcc-bcl-admin.js', array('jquery'), FCC_BCL_VERSION, false);
-        wp_enqueue_script('fcc-bcl-label-preview', FCC_BCL_PLUGIN_URL . 'admin/js/fcc-bcl-label-preview.js', array('jquery'), FCC_BCL_VERSION, false);
+        wp_enqueue_script('fcc-bcl-admin', FCC_BCL_PLUGIN_URL . 'admin/js/fcc-bcl-admin.js', array('jquery'), $this->version, false);
+        wp_localize_script('fcc-bcl-admin', 'fcc_bcl_admin', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('fcc_bcl_preview_nonce')
+        ));
     }
 
     /**
@@ -99,6 +106,16 @@ class FCC_BCL_Admin {
             'fcc-bcl-edit-company',
             array($this, 'display_edit_company_page')
         );
+
+        // Add "Edit Label" as a hidden submenu item
+        add_submenu_page(
+            null,
+            'Edit Label',
+            'Edit Label',
+            'manage_options',
+            'fcc-bcl-edit-label',
+            array($this, 'display_edit_label_page')
+        );
     }
 
     /**
@@ -161,7 +178,11 @@ class FCC_BCL_Admin {
         if (!current_user_can('manage_options')) {
             wp_die(__('You do not have sufficient permissions to access this page.'));
         }
-
+    
+        if (isset($_GET['message']) && $_GET['message'] === 'updated') {
+            add_settings_error('fcc_bcl_messages', 'fcc_bcl_message', __('Company updated successfully', 'fcc-bcl'), 'updated');
+        }
+    
         include_once('partials/fcc-bcl-company-config.php');
     }
 
@@ -174,16 +195,51 @@ class FCC_BCL_Admin {
         if (!current_user_can('manage_options')) {
             wp_die(__('You do not have sufficient permissions to access this page.'));
         }
-
+    
+        // Get the company ID from the URL
         $company_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+    
+        // Fetch the company data
         $company = $this->get_company_by_id($company_id);
-
+    
         if (!$company) {
-            wp_die(__('Company not found.'));
+            wp_die(__('Company not found', 'fcc-bcl'));
         }
-
+    
+        // Check if form is submitted
+        if (isset($_POST['fcc_bcl_edit_company'])) {
+            // Verify nonce
+            if (!isset($_POST['fcc_bcl_edit_company_nonce']) || !wp_verify_nonce($_POST['fcc_bcl_edit_company_nonce'], 'fcc_bcl_edit_company')) {
+                wp_die('Security check failed');
+            }
+    
+            // Process and sanitize form data
+            $company_data = $this->process_company_form_data($_POST);
+    
+            // Save company data to the database
+            $result = $this->save_company_data($company_data, $company_id);
+    
+            if ($result) {
+                // Redirect to the manage companies page with a success message
+                $redirect_url = add_query_arg(
+                    array(
+                        'page' => 'fcc-bcl-companies',
+                        'message' => 'updated',
+                    ),
+                    admin_url('admin.php')
+                );
+    
+                wp_safe_redirect($redirect_url);
+                exit;
+            } else {
+                // Add an error message if the update fails
+                add_settings_error('fcc_bcl_messages', 'fcc_bcl_message', __('Error updating company.', 'fcc-bcl'), 'error');
+            }
+        }
+    
+        // Include the edit company form template
         include_once('partials/fcc-bcl-edit-company.php');
-    }
+    }    
 
     /**
      * Get a company by its ID.
@@ -287,60 +343,69 @@ class FCC_BCL_Admin {
      * Process and sanitize label form data.
      *
      * @since    1.0.0
-     * @param    array    $post_data    The raw POST data.
+     * @param    array    $form_data    The raw POST data.
      * @return   array                  The sanitized label data.
      */
-    private function process_label_form_data($post_data) {
-        $label_data = array(
-            'company_id' => isset($post_data['company_id']) ? intval($post_data['company_id']) : 0,
-            'discounts_and_bundles_url' => isset($post_data['discounts_and_bundles_url']) ? esc_url_raw($post_data['discounts_and_bundles_url']) : '',
-            'acp' => isset($post_data['acp']) ? sanitize_text_field($post_data['acp']) : '',
-            'fcc_id' => isset($post_data['fcc_id']) ? sanitize_text_field($post_data['fcc_id']) : '',
-            'data_service_id' => isset($post_data['data_service_id']) ? sanitize_text_field($post_data['data_service_id']) : '',
-            'data_service_name' => isset($post_data['data_service_name']) ? sanitize_text_field($post_data['data_service_name']) : '',
-            'fixed_or_mobile' => isset($post_data['fixed_or_mobile']) ? sanitize_text_field($post_data['fixed_or_mobile']) : '',
-            'data_service_price' => isset($post_data['data_service_price']) ? floatval($post_data['data_service_price']) : 0.0,
-            'billing_frequency_in_months' => isset($post_data['billing_frequency_in_months']) ? intval($post_data['billing_frequency_in_months']) : 1,
-            'introductory_period_in_months' => isset($post_data['introductory_period_in_months']) ? intval($post_data['introductory_period_in_months']) : 0,
-            'introductory_price_per_month' => isset($post_data['introductory_price_per_month']) ? floatval($post_data['introductory_price_per_month']) : 0.0,
-            'contract_duration' => isset($post_data['contract_duration']) ? intval($post_data['contract_duration']) : 0,
-            'monthly_fees' => array(),
-            'onetime_fees' => array(),
-            'early_termination_fee' => isset($post_data['early_termination_fee']) ? floatval($post_data['early_termination_fee']) : 0.0,
-            'dl_speed_in_kbps' => isset($post_data['dl_speed_in_kbps']) ? intval($post_data['dl_speed_in_kbps']) : 0,
-            'ul_speed_in_kbps' => isset($post_data['ul_speed_in_kbps']) ? intval($post_data['ul_speed_in_kbps']) : 0,
-            'latency_in_ms' => isset($post_data['latency_in_ms']) ? intval($post_data['latency_in_ms']) : 0,
-            'data_included_in_monthly_price' => isset($post_data['data_included_in_monthly_price']) ? intval($post_data['data_included_in_monthly_price']) : 0,
-            'overage_fee' => isset($post_data['overage_fee']) ? floatval($post_data['overage_fee']) : 0.0,
-            'overage_data_amount' => isset($post_data['overage_data_amount']) ? intval($post_data['overage_data_amount']) : 0,
-            'shortcode' => $this->generate_unique_shortcode(),
-        );
+    private function process_label_form_data($form_data, $is_edit = false) {
+        $default_data = [
+            'company_id' => 0,
+            'discounts_and_bundles_url' => '',
+            'acp' => '',
+            'fcc_id' => '',
+            'data_service_id' => '',
+            'data_service_name' => '',
+            'fixed_or_mobile' => '',
+            'data_service_price' => 0,
+            'billing_frequency_in_months' => 1,
+            'introductory_period_in_months' => 0,
+            'introductory_price_per_month' => 0,
+            'contract_duration' => 0,
+            'early_termination_fee' => 0,
+            'dl_speed_in_kbps' => 0,
+            'ul_speed_in_kbps' => 0,
+            'latency_in_ms' => 0,
+            'data_included_in_monthly_price' => 0,
+            'overage_fee' => 0,
+            'overage_data_amount' => 0,
+            'shortcode' => '',
+        ];
 
-        // Process monthly fees
-        if (isset($post_data['monthly_fee_name']) && is_array($post_data['monthly_fee_name'])) {
-            foreach ($post_data['monthly_fee_name'] as $key => $name) {
-                if (!empty($name) && isset($post_data['monthly_fee_price'][$key])) {
-                    $label_data['monthly_fees'][] = array(
-                        'name' => sanitize_text_field($name),
-                        'price' => floatval($post_data['monthly_fee_price'][$key])
-                    );
-                }
+        $label_data = array_merge($default_data, array_intersect_key($form_data, $default_data));
+
+        foreach ($label_data as $key => $value) {
+            if (is_string($value)) {
+                $label_data[$key] = sanitize_text_field($value);
+            } elseif (is_array($value)) {
+                $label_data[$key] = array_map('sanitize_text_field', $value);
             }
         }
 
-        // Process one-time fees
-        if (isset($post_data['onetime_fee_name']) && is_array($post_data['onetime_fee_name'])) {
-            foreach ($post_data['onetime_fee_name'] as $key => $name) {
-                if (!empty($name) && isset($post_data['onetime_fee_price'][$key])) {
-                    $label_data['onetime_fees'][] = array(
-                        'name' => sanitize_text_field($name),
-                        'price' => floatval($post_data['onetime_fee_price'][$key])
-                    );
-                }
-            }
+        // Process monthly and one-time fees
+        $label_data['monthly_fees'] = $this->process_fees($form_data, 'monthly');
+        $label_data['onetime_fees'] = $this->process_fees($form_data, 'onetime');
+
+        if (!$is_edit) {
+            $label_data['shortcode'] = $this->generate_unique_shortcode();
         }
 
         return $label_data;
+    }
+
+    private function process_fees($form_data, $fee_type) {
+        $fees = array();
+        $fee_names = isset($form_data["{$fee_type}_fee_name"]) ? (array) $form_data["{$fee_type}_fee_name"] : array();
+        $fee_prices = isset($form_data["{$fee_type}_fee_price"]) ? (array) $form_data["{$fee_type}_fee_price"] : array();
+
+        foreach ($fee_names as $index => $name) {
+            if (!empty($name) && isset($fee_prices[$index])) {
+                $fees[] = array(
+                    'name' => sanitize_text_field($name),
+                    'price' => floatval($fee_prices[$index])
+                );
+            }
+        }
+
+        return $fees;
     }
 
     /**
@@ -355,39 +420,39 @@ class FCC_BCL_Admin {
         return $prefix . $unique_id;
     }
 
-    private function render_plan_information($companies) {
+    private function render_plan_information($companies, $label_data) {
         include FCC_BCL_PLUGIN_DIR . 'admin/partials/form-sections/plan-information.php';
     }
     
-    private function render_plan_speed() {
+    private function render_plan_speed($label_data) {
         include FCC_BCL_PLUGIN_DIR . 'admin/partials/form-sections/plan-speed.php';
     }
     
-    private function render_plan_data() {
+    private function render_plan_data($label_data) {
         include FCC_BCL_PLUGIN_DIR . 'admin/partials/form-sections/plan-data.php';
     }
     
-    private function render_plan_pricing() {
+    private function render_plan_pricing($label_data) {
         include FCC_BCL_PLUGIN_DIR . 'admin/partials/form-sections/plan-pricing.php';
     }
     
-    private function render_plan_contract() {
+    private function render_plan_contract($label_data) {
         include FCC_BCL_PLUGIN_DIR . 'admin/partials/form-sections/plan-contract.php';
     }
     
-    private function render_customer_support() {
+    private function render_customer_support($label_data) {
         include FCC_BCL_PLUGIN_DIR . 'admin/partials/form-sections/customer-support.php';
     }
     
-    private function render_monthly_fees() {
+    private function render_monthly_fees($label_data) {
         include FCC_BCL_PLUGIN_DIR . 'admin/partials/form-sections/monthly-fees.php';
     }
     
-    private function render_onetime_fees() {
+    private function render_onetime_fees($label_data) {
         include FCC_BCL_PLUGIN_DIR . 'admin/partials/form-sections/onetime-fees.php';
     }
     
-    private function render_discounts_and_bundles() {
+    private function render_discounts_and_bundles($label_data) {
         include FCC_BCL_PLUGIN_DIR . 'admin/partials/form-sections/discounts-and-bundles.php';
     }
 
@@ -465,5 +530,118 @@ class FCC_BCL_Admin {
             $wpdb->insert($table_name, $data, $format);
             return $wpdb->insert_id;
         }
-    }  
+    }
+
+    /**
+     * Display the edit label page.
+     *
+     * @since    1.0.0
+     */
+    public function display_edit_label_page() {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('You do not have sufficient permissions to access this page.'));
+        }
+
+        $label_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+        if (!$label_id) {
+            wp_die(__('Invalid label ID.'));
+        }
+
+        $label_data = $this->get_label_by_id($label_id);
+        if (!$label_data) {
+            wp_die(__('Label not found.'));
+        }
+
+        $companies = $this->get_companies();
+
+        if (isset($_POST['fcc_bcl_edit_label'])) {
+            // Verify nonce
+            if (!isset($_POST['fcc_bcl_edit_label_nonce']) || !wp_verify_nonce($_POST['fcc_bcl_edit_label_nonce'], 'fcc_bcl_edit_label')) {
+                wp_die('Security check failed');
+            }
+
+            $updated_label_data = $this->process_label_form_data($_POST, true);
+            $updated_label_data['id'] = $label_id;
+
+            $result = $this->update_label($updated_label_data);
+
+            if ($result) {
+                $label_data = $this->get_label_by_id($label_id);
+                add_settings_error('fcc_bcl_messages', 'fcc_bcl_message', __('Label updated successfully', 'fcc-bcl'), 'updated');
+            } else {
+                add_settings_error('fcc_bcl_messages', 'fcc_bcl_message', __('Error updating label', 'fcc-bcl'), 'error');
+            }
+        }
+
+        // Include the edit label form template
+        include FCC_BCL_PLUGIN_DIR . 'admin/partials/fcc-bcl-edit-label.php';
+    }
+
+    /**
+     * Get a label by its ID.
+     *
+     * @param int $label_id The ID of the label to retrieve.
+     * @return array|false The label data or false if not found.
+     */
+    private function get_label_by_id($label_id) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'fcc_labels';
+        return $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE id = %d", $label_id), ARRAY_A);
+    }
+
+    public function ajax_get_label_preview() {
+        error_log('AJAX request received: ' . print_r($_POST, true));
+        
+        // Check if the nonce is set in the request
+        if (!isset($_POST['nonce'])) {
+            wp_send_json_error('Nonce is missing');
+            return;
+        }
+
+        // Verify the nonce
+        if (!wp_verify_nonce($_POST['nonce'], 'fcc_bcl_edit_label')) {
+            wp_send_json_error('Invalid nonce');
+            return;
+        }
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+            return;
+        }
+
+        $form_data = isset($_POST['form_data']) ? $_POST['form_data'] : '';
+        if (empty($form_data)) {
+            wp_send_json_error('No form data received');
+            return;
+        }
+
+        parse_str($form_data, $label_data);
+
+        // Process the label data and generate the preview HTML
+        $preview_html = $this->generate_label_preview($label_data);
+
+        wp_send_json_success($preview_html);
+    }
+
+    private function generate_label_preview($label_data) {
+        return FCC_BCL_Label_Template::generate_label_html($label_data);
+    }
+
+    private function update_label($label_data) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'fcc_labels';
+
+        $id = $label_data['id'];
+        unset($label_data['id']);
+
+        $result = $wpdb->update(
+            $table_name,
+            $label_data,
+            ['id' => $id],
+            array_map(function($value) { return is_numeric($value) ? '%d' : '%s'; }, $label_data),
+            ['%d']
+        );
+
+        return $result !== false;
+    }
 }

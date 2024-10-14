@@ -13,8 +13,8 @@ if (!defined('WPINC')) {
     die;
 }
 
-// Define plugin version - this is the single source of truth
-define('FCC_BCL_VERSION', '1.1.4');
+// Define plugin version
+define('FCC_BCL_VERSION', '1.1.5');
 
 // Other constant definitions remain the same
 define('FCC_BCL_PLUGIN_DIR', plugin_dir_path(__FILE__));
@@ -24,6 +24,7 @@ define('FCC_BCL_PLUGIN_URL', plugin_dir_url(__FILE__));
 require_once FCC_BCL_PLUGIN_DIR . 'includes/class-fcc-bcl-activator.php';
 require_once FCC_BCL_PLUGIN_DIR . 'includes/class-fcc-bcl-deactivator.php';
 require_once FCC_BCL_PLUGIN_DIR . 'includes/class-fcc-bcl.php';
+require_once FCC_BCL_PLUGIN_DIR . 'includes/class-fcc-bcl-label-template.php';
 
 // Register activation and deactivation hooks
 register_activation_hook(__FILE__, array('FCC_BCL_Activator', 'activate'));

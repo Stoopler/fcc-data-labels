@@ -1,14 +1,4 @@
 <?php
-/**
- * Provide a admin area view for editing a company
- *
- * This file is used to markup the admin-facing aspects of the plugin.
- *
- * @since      1.0.0
- * @package    FCC_BCL
- * @subpackage FCC_BCL/admin/partials
- */
-
 // Check user capabilities
 if (!current_user_can('manage_options')) {
     return;
@@ -35,12 +25,12 @@ if (isset($_POST['fcc_bcl_edit_company'])) {
 
     // Refresh company data after update
     $company = $this->get_company_by_id($company['id']);
+    settings_errors('fcc_bcl_messages');
 }
 ?>
 
 <div class="wrap">
     <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
-    <?php settings_errors('fcc_bcl_messages'); ?>
     
     <?php _e('Update the company\'s information below. Any changes made here will be reflected in the shared data used during label creation.', 'fcc-bcl'); ?> 
     <form method="post" action="">
